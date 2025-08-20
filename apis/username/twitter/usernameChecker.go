@@ -3,6 +3,7 @@ package twitter
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -13,6 +14,10 @@ import (
 const DOMAIN = "https://x.com/"
 
 func CheckUsername(parent context.Context, username string) (nickname string, err error) {
+	if !IsValidUsername(username) {
+		err = errors.New("invalid username")
+		return
+	}
 	ctx, cancel := chromedp.NewContext(parent)
 	defer cancel()
 	var requestID network.RequestID
@@ -29,7 +34,6 @@ func CheckUsername(parent context.Context, username string) (nickname string, er
 			}
 		}
 	})
-
 	err = chromedp.Run(ctx,
 		chromedp.Navigate(DOMAIN+username),
 
