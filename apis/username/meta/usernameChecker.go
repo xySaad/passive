@@ -1,4 +1,4 @@
-package facebook
+package meta
 
 import (
 	"context"
@@ -14,9 +14,12 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
-const DOMAIN = "https://web.facebook.com/"
+var DOMAINS = map[string]string{
+	"facebook":  "https://web.facebook.com/",
+	"instagram": "https://www.instagram.com/",
+}
 
-func CheckUsername(parent context.Context, username string) (nickname string, err error) {
+func CheckOnDomain(parent context.Context, domain, username string) (nickname string, err error) {
 	ctx, cancel := chromedp.NewContext(parent)
 	defer cancel()
 
@@ -27,10 +30,10 @@ func CheckUsername(parent context.Context, username string) (nickname string, er
 	chromedp.ListenTarget(ctx, func(ev any) {
 		switch e := ev.(type) {
 		case *network.EventRequestWillBeSent:
-			if e.RedirectResponse != nil && e.RedirectResponse.URL == DOMAIN+username {
-				username = strings.Split(e.Request.URL, DOMAIN)[1]
+			if e.RedirectResponse != nil && e.RedirectResponse.URL == domain+username {
+				username = strings.Split(e.Request.URL, domain)[1]
 			}
-			if e.Request.URL == DOMAIN+"ajax/bulk-route-definitions/" && e.Request.HasPostData {
+			if e.Request.URL == domain+"ajax/bulk-route-definitions/" && e.Request.HasPostData {
 				defer mx.Unlock()
 				mx.Lock()
 				queue = append(queue, e.RequestID)
@@ -44,7 +47,7 @@ func CheckUsername(parent context.Context, username string) (nickname string, er
 		}
 	})
 	err = chromedp.Run(ctx,
-		chromedp.Navigate(DOMAIN+username),
+		chromedp.Navigate(domain+username),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			for id := range requestID {
 				postData, err := network.GetRequestPostData(id).Do(ctx)
@@ -78,4 +81,18 @@ func CheckUsername(parent context.Context, username string) (nickname string, er
 		}),
 	)
 	return nickname, err
+}
+
+func CheckUsername(parent context.Context, username string) {
+	for target, domain := range DOMAINS {
+		nickname, err := CheckOnDomain(parent, domain, username)
+		nickname = strings.Split(nickname, "(@"+username+")")[0]
+		nickname = strings.TrimSpace(nickname)
+		targetName := strings.ToUpper(target[:1]) + target[1:]
+		if err != nil {
+			fmt.Printf("%s: no\n", targetName)
+		} else {
+			fmt.Printf("%s: yes (%s) \n", targetName, nickname)
+		}
+	}
 }

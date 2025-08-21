@@ -23,6 +23,10 @@ func main() {
 	}
 
 	flag := args[0]
+	if flag == "--help" {
+		fmt.Println(help.HELP_FLAG)
+		return
+	}
 	usage, exec := HandleFlag(flag)
 	if exec == nil {
 		fmt.Printf(usage, flag)

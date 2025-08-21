@@ -1,4 +1,4 @@
-package facebook
+package meta
 
 import "regexp"
 
