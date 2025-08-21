@@ -46,9 +46,14 @@ func CheckOnDomain(parent context.Context, domain, username string) (nickname st
 			}
 		}
 	})
+	var pageText string
 	err = chromedp.Run(ctx,
 		chromedp.Navigate(domain+username),
+		chromedp.Text(`body`, &pageText, chromedp.NodeVisible, chromedp.ByQuery),
 		chromedp.ActionFunc(func(ctx context.Context) error {
+			if strings.Contains(pageText, "You must log in to continue.") {
+				return errors.New("login required")
+			}
 			for id := range requestID {
 				postData, err := network.GetRequestPostData(id).Do(ctx)
 				if err != nil {
