@@ -3,7 +3,6 @@ package telegram
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/chromedp/cdproto/network"
@@ -11,7 +10,6 @@ import (
 )
 
 func CheckUsername(parent context.Context, username string) (nickname string, err error) {
-	fmt.Println(username)
 	ctx, cancel := chromedp.NewContext(parent)
 	defer cancel()
 	done := make(chan struct{}, 1)
